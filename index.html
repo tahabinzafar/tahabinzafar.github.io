@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>taha@portfolio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0a07;
+    --amber:#f4b942;
+    --amber-hi:#ffd98a;
+    --amber-dim:#7d6a3a;
+    --amber-faint:#4a3f24;
+    --green:#9ad27a;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    background:var(--bg);
+    color:var(--amber);
+    font-family:'IBM Plex Mono',ui-monospace,monospace;
+    font-size:15px;
+    line-height:1.55;
+    overflow:hidden;
+  }
+
+  /* crt phosphor glow + scanlines, kept light enough to read */
+  .crt::before{
+    content:"";
+    position:fixed;inset:0;z-index:5;pointer-events:none;
+    background:repeating-linear-gradient(
+      to bottom, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,.18) 3px, rgba(0,0,0,0) 4px);
+    mix-blend-mode:multiply;
+  }
+  .crt::after{
+    content:"";
+    position:fixed;inset:0;z-index:6;pointer-events:none;
+    background:radial-gradient(120% 120% at 50% 50%, transparent 60%, rgba(0,0,0,.55) 100%);
+    animation:flick 6s infinite steps(60);
+  }
+  @keyframes flick{ 97%{opacity:1} 98%{opacity:.92} 99%{opacity:1} }
+
+  #screen{
+    height:100dvh;
+    overflow-y:auto;
+    padding:26px 22px 90px;
+    text-shadow:0 0 3px rgba(244,185,66,.35);
+    scrollbar-width:thin;
+    scrollbar-color:var(--amber-faint) transparent;
+  }
+  #screen::-webkit-scrollbar{width:8px}
+  #screen::-webkit-scrollbar-thumb{background:var(--amber-faint);border-radius:4px}
+
+  .bar{
+    color:var(--amber-dim);
+    border-bottom:1px solid var(--amber-faint);
+    padding-bottom:8px;margin-bottom:18px;
+    display:flex;justify-content:space-between;font-size:12.5px;letter-spacing:.04em;
+  }
+  .bar b{color:var(--amber)}
+
+  pre{font:inherit;white-space:pre-wrap;word-break:break-word}
+  .logo{color:var(--amber-hi);line-height:1.05;white-space:pre;margin-bottom:6px}
+  .dim{color:var(--amber-dim)}
+  .hi{color:var(--amber-hi)}
+  .ok{color:var(--green)}
+  a{color:var(--amber-hi);text-decoration:none;border-bottom:1px dotted var(--amber-dim)}
+  a:hover{background:var(--amber);color:var(--bg);border-bottom-color:var(--amber)}
+
+  .line{margin:1px 0}
+  .out{margin:6px 0 14px}
+  .cmd-echo .p{color:var(--green)}
+
+  /* the live input line */
+  #prompt{display:flex;align-items:center;gap:0;flex-wrap:wrap}
+  #prompt .p{color:var(--green);white-space:nowrap}
+  #inp{
+    background:transparent;border:0;outline:0;color:var(--amber-hi);
+    font:inherit;flex:1;min-width:60px;caret-color:transparent;
+    text-shadow:inherit;
+  }
+  .caret{display:inline-block;width:9px;height:1.15em;background:var(--amber);
+    vertical-align:text-bottom;animation:blink 1.05s steps(1) infinite;margin-left:-1px}
+  @keyframes blink{50%{opacity:0}}
+
+  /* tappable command chips, mostly for phones */
+  #chips{
+    position:fixed;left:0;right:0;bottom:0;z-index:7;
+    display:flex;gap:7px;flex-wrap:wrap;
+    padding:10px 16px;background:linear-gradient(transparent,var(--bg) 38%);
+    border-top:1px solid var(--amber-faint);
+  }
+  #chips button{
+    font:inherit;font-size:12.5px;cursor:pointer;
+    color:var(--amber);background:transparent;
+    border:1px solid var(--amber-faint);border-radius:4px;
+    padding:3px 10px;transition:all .15s;
+  }
+  #chips button:hover{background:var(--amber);color:var(--bg);border-color:var(--amber)}
+
+  ::selection{background:var(--amber);color:var(--bg)}
+
+  @media(max-width:640px){
+    body{font-size:13px}
+    .logo{font-size:10px}
+    #screen{padding:18px 14px 86px}
+  }
+</style>
+</head>
+<body class="crt">
+
+<div id="screen">
+  <div class="bar"><span><b>taha@portfolio</b>:~</span><span id="clock"></span></div>
+  <div id="log"></div>
+  <div id="prompt" style="display:none">
+    <span class="p">taha@portfolio:~$&nbsp;</span><input id="inp" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"><span class="caret"></span>
+  </div>
+</div>
+
+<div id="chips"></div>
+
+<script>
+const log = document.getElementById('log');
+const promptEl = document.getElementById('prompt');
+const inp = document.getElementById('inp');
+const screen = document.getElementById('screen');
+
+const ascii =
+`████████  █████  ██   ██  █████
+   ██    ██   ██ ██   ██ ██   ██
+   ██    ███████ ███████ ███████
+   ██    ██   ██ ██   ██ ██   ██
+   ██    ██   ██ ██   ██ ██   ██`;
+
+// content lives here so commands stay thin
+const data = {
+  about:
+`I build the data infrastructure and models behind sports
+and entertainment consulting work.
+
+The work spans the full stack — pipelines, statistical
+modelling, survey analysis, API development, ML, and the
+cloud infrastructure that holds it together. Recent focus
+has been RAG systems, agentic workflows and geospatial
+analysis.`,
+  stack: [
+    ['languages', 'Python · R · SQL'],
+    ['ml / ai',   'RAG · agentic workflows · modelling'],
+    ['bi',        'Power BI'],
+    ['cloud',     'AWS · Azure · Docker'],
+    ['ops',       'workflow automation'],
+  ],
+  work: [
+    ['data engineering', 'pipelines + cloud infra, reproducible and scalable'],
+    ['modelling',        'statistics and survey analysis turned into findings'],
+    ['ai / ml',          'RAG, agents and ML wired into real products'],
+    ['platforms',        'API development, automation, geospatial analysis'],
+  ],
+  repos: [
+    ['cv-camera-app',     'motion detection + object recognition', 'https://github.com/tahabinzafar/cv-camera-app'],
+    ['macbook-harmonium', 'macbook tilt sensor as a harmonium bellows', 'https://github.com/tahabinzafar/macbook-harmonium'],
+    ['btc-dashboard',     'live crypto dashboard', 'https://github.com/tahabinzafar/btc-dashboard'],
+    ['daily-tracker',     'a small habit tracker', 'https://github.com/tahabinzafar/daily-tracker'],
+  ],
+  contact: [
+    ['email',    'tahazafar96@gmail.com',            'mailto:tahazafar96@gmail.com'],
+    ['github',   'github.com/tahabinzafar',          'https://github.com/tahabinzafar'],
+    ['linkedin', 'linkedin.com/in/tahazafar96',      'https://www.linkedin.com/in/tahazafar96/'],
+    ['twitter',  '@tahazafar',                        'https://twitter.com/tahazafar'],
+  ],
+};
+
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function print(html, cls){
+  const d = document.createElement('div');
+  d.className = 'out' + (cls ? ' '+cls : '');
+  d.innerHTML = html;
+  log.appendChild(d);
+  screen.scrollTop = screen.scrollHeight;
+}
+
+const pad = (s,n) => (s + ' '.repeat(n)).slice(0,n);
+
+const commands = {
+  help(){
+    const list = [
+      ['about','what I do'],['stack','tools I work with'],['work','how the work breaks down'],
+      ['repos','public side projects'],['contact','how to reach me'],
+      ['neofetch','the splash again'],['clear','wipe the screen'],
+    ];
+    return list.map(([c,d])=>`  <span class="hi">${pad(c,10)}</span><span class="dim">${d}</span>`).join('\n');
+  },
+  about(){ return esc(data.about); },
+  whoami(){ return `taha — data analyst, london.\n<span class="dim">type</span> <span class="hi">about</span> <span class="dim">for the longer version.</span>`; },
+  stack(){ return data.stack.map(([k,v])=>`  <span class="hi">${pad(k,12)}</span>${v}`).join('\n'); },
+  work(){ return data.work.map(([k,v])=>`  <span class="hi">${pad(k+':',20)}</span>\n    <span class="dim">${v}</span>`).join('\n\n'); },
+  repos(){
+    return data.repos.map(([n,d,u])=>`  <a href="${u}" target="_blank">${pad(n,20)}</a><span class="dim">${d}</span>`).join('\n')
+      + `\n\n  <span class="dim">all 23 →</span> <a href="https://github.com/tahabinzafar?tab=repositories" target="_blank">github.com/tahabinzafar</a>`;
+  },
+  contact(){ return data.contact.map(([k,v,u])=>`  <span class="hi">${pad(k,10)}</span><a href="${u}" target="_blank">${v}</a>`).join('\n'); },
+  neofetch(){ return boot(false); },
+  date(){ return new Date().toString(); },
+  echo(args){ return esc(args.join(' ')); },
+  sudo(){ return `<span class="dim">nice try. this terminal answers to no one.</span>`; },
+  harmonium(){ return `<span class="ok">♪</span> drone in C, reed buzzing, laptop lid doubling as a bellows.\n<span class="dim">see</span> <span class="hi">repos</span> <span class="dim">→ macbook-harmonium</span>`; },
+  coffee(){ return `<span class="dim">brewing... </span><span class="ok">done.</span> ☕ back to the pipelines.`; },
+  clear(){ log.innerHTML=''; return null; },
+};
+const aliases = { ls:'help', '?':'help', man:'help', projects:'repos', skills:'stack', email:'contact', cls:'clear', info:'about' };
+
+function run(raw){
+  const trimmed = raw.trim();
+  print(`<span class="p" style="color:var(--green)">taha@portfolio:~$</span> ${esc(trimmed)}`, 'cmd-echo');
+  if(!trimmed) return;
+  const [c, ...args] = trimmed.split(/\s+/);
+  const key = aliases[c.toLowerCase()] || c.toLowerCase();
+  const fn = commands[key];
+  if(fn){
+    const r = fn(args);
+    if(r !== null) print(r);
+  } else {
+    print(`<span class="dim">${esc(c)}: command not found. try</span> <span class="hi">help</span>`);
+  }
+}
+
+// boot splash — returns the html, optionally with the typed intro lines
+function boot(intro){
+  const sys =
+`<span class="hi">taha@portfolio</span>
+<span class="dim">────────────────</span>
+<span class="hi">role</span>     data analyst
+<span class="hi">focus</span>    sports &amp; entertainment analytics
+<span class="hi">stack</span>    python · r · sql · ml
+<span class="hi">cloud</span>    aws · azure · docker
+<span class="hi">based</span>    london, uk
+<span class="hi">shell</span>    /bin/curiosity
+<span class="hi">uptime</span>   since karachi '96`;
+  return `<pre class="logo">${ascii}</pre>\n${sys}` +
+    (intro ? `\n\n<span class="dim">interactive cv. type</span> <span class="hi">help</span> <span class="dim">or tap a command below.</span>` : '');
+}
+
+// --- boot sequence on load ---
+const bootLines = [
+  '<span class="dim">booting portfolio.os ...</span>',
+  '<span class="dim">mounting /dev/curiosity ... <span class="ok">ok</span></span>',
+  '<span class="dim">loading data + models ... <span class="ok">ok</span></span>',
+  '<span class="dim">starting shell ... <span class="ok">ok</span></span>',
+];
+let bi = 0;
+function nextBoot(){
+  if(bi < bootLines.length){
+    print(bootLines[bi++]);
+    setTimeout(nextBoot, 260);
+  } else {
+    print(boot(true));
+    promptEl.style.display = 'flex';
+    inp.focus();
+  }
+}
+setTimeout(nextBoot, 350);
+
+// --- input + history ---
+const hist = []; let hp = -1;
+inp.addEventListener('keydown', e=>{
+  if(e.key === 'Enter'){
+    const v = inp.value; inp.value='';
+    if(v.trim()){ hist.push(v); hp = hist.length; }
+    run(v);
+    screen.scrollTop = screen.scrollHeight;
+  } else if(e.key === 'ArrowUp'){
+    if(hp>0){ hp--; inp.value = hist[hp]; } e.preventDefault();
+  } else if(e.key === 'ArrowDown'){
+    if(hp < hist.length-1){ hp++; inp.value = hist[hp]; }
+    else { hp = hist.length; inp.value=''; } e.preventDefault();
+  }
+});
+// tap anywhere to keep the keyboard focused
+document.addEventListener('click', e=>{ if(!e.target.closest('a,button')) inp.focus(); });
+
+// chips
+const chips = ['about','stack','work','repos','contact','clear'];
+const chipBox = document.getElementById('chips');
+chips.forEach(c=>{
+  const b = document.createElement('button');
+  b.textContent = c;
+  b.onclick = ()=>{ run(c); inp.focus(); };
+  chipBox.appendChild(b);
+});
+
+// little clock in the title bar
+const clock = document.getElementById('clock');
+setInterval(()=>{ clock.textContent = new Date().toLocaleTimeString('en-GB'); }, 1000);
+</script>
+</body>
+</html>
