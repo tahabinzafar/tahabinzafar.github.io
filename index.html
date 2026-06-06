@@ -188,7 +188,6 @@ const commands = {
     return list.map(([c,d])=>`  <span class="hi">${pad(c,10)}</span><span class="dim">${d}</span>`).join('\n');
   },
   about(){ return esc(data.about); },
-  whoami(){ return `taha — data analyst, london.\n<span class="dim">type</span> <span class="hi">about</span> <span class="dim">for the longer version.</span>`; },
   stack(){ return data.stack.map(([k,v])=>`  <span class="hi">${pad(k,12)}</span>${v}`).join('\n'); },
   work(){ return data.work.map(([k,v])=>`  <span class="hi">${pad(k+':',20)}</span>\n    <span class="dim">${v}</span>`).join('\n\n'); },
   contact(){ return data.contact.map(([k,v,u])=>`  <span class="hi">${pad(k,10)}</span><a href="${u}" target="_blank">${v}</a>`).join('\n'); },
