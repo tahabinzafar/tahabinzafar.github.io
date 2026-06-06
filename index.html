@@ -188,6 +188,7 @@ const commands = {
     return list.map(([c,d])=>`  <span class="hi">${pad(c,10)}</span><span class="dim">${d}</span>`).join('\n');
   },
   about(){ return esc(data.about); },
+  whoami(){ return `taha — london.\n<span class="dim">type</span> <span class="hi">about</span> <span class="dim">for the longer version.</span>`; },
   stack(){ return data.stack.map(([k,v])=>`  <span class="hi">${pad(k,12)}</span>${v}`).join('\n'); },
   work(){ return data.work.map(([k,v])=>`  <span class="hi">${pad(k+':',20)}</span>\n    <span class="dim">${v}</span>`).join('\n\n'); },
   contact(){ return data.contact.map(([k,v,u])=>`  <span class="hi">${pad(k,10)}</span><a href="${u}" target="_blank">${v}</a>`).join('\n'); },
@@ -221,8 +222,6 @@ function boot(intro){
   const sys =
 `<span class="hi">taha@portfolio</span>
 <span class="dim">────────────────</span>
-<span class="hi">role</span>     data analyst
-<span class="hi">focus</span>    sports &amp; entertainment analytics
 <span class="hi">stack</span>    python · r · sql · ml
 <span class="hi">cloud</span>    aws · azure · docker
 <span class="hi">based</span>    london, uk
