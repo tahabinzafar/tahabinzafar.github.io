@@ -159,12 +159,6 @@ analysis.`,
     ['ai / ml',          'RAG, agents and ML wired into real products'],
     ['platforms',        'API development, automation, geospatial analysis'],
   ],
-  repos: [
-    ['cv-camera-app',     'motion detection + object recognition', 'https://github.com/tahabinzafar/cv-camera-app'],
-    ['macbook-harmonium', 'macbook tilt sensor as a harmonium bellows', 'https://github.com/tahabinzafar/macbook-harmonium'],
-    ['btc-dashboard',     'live crypto dashboard', 'https://github.com/tahabinzafar/btc-dashboard'],
-    ['daily-tracker',     'a small habit tracker', 'https://github.com/tahabinzafar/daily-tracker'],
-  ],
   contact: [
     ['email',    'tahazafar96@gmail.com',            'mailto:tahazafar96@gmail.com'],
     ['github',   'github.com/tahabinzafar',          'https://github.com/tahabinzafar'],
@@ -188,7 +182,7 @@ const commands = {
   help(){
     const list = [
       ['about','what I do'],['stack','tools I work with'],['work','how the work breaks down'],
-      ['repos','public side projects'],['contact','how to reach me'],
+      ['contact','how to reach me'],
       ['neofetch','the splash again'],['clear','wipe the screen'],
     ];
     return list.map(([c,d])=>`  <span class="hi">${pad(c,10)}</span><span class="dim">${d}</span>`).join('\n');
@@ -197,20 +191,16 @@ const commands = {
   whoami(){ return `taha — data analyst, london.\n<span class="dim">type</span> <span class="hi">about</span> <span class="dim">for the longer version.</span>`; },
   stack(){ return data.stack.map(([k,v])=>`  <span class="hi">${pad(k,12)}</span>${v}`).join('\n'); },
   work(){ return data.work.map(([k,v])=>`  <span class="hi">${pad(k+':',20)}</span>\n    <span class="dim">${v}</span>`).join('\n\n'); },
-  repos(){
-    return data.repos.map(([n,d,u])=>`  <a href="${u}" target="_blank">${pad(n,20)}</a><span class="dim">${d}</span>`).join('\n')
-      + `\n\n  <span class="dim">all 23 →</span> <a href="https://github.com/tahabinzafar?tab=repositories" target="_blank">github.com/tahabinzafar</a>`;
-  },
   contact(){ return data.contact.map(([k,v,u])=>`  <span class="hi">${pad(k,10)}</span><a href="${u}" target="_blank">${v}</a>`).join('\n'); },
   neofetch(){ return boot(false); },
   date(){ return new Date().toString(); },
   echo(args){ return esc(args.join(' ')); },
   sudo(){ return `<span class="dim">nice try. this terminal answers to no one.</span>`; },
-  harmonium(){ return `<span class="ok">♪</span> drone in C, reed buzzing, laptop lid doubling as a bellows.\n<span class="dim">see</span> <span class="hi">repos</span> <span class="dim">→ macbook-harmonium</span>`; },
+  harmonium(){ return `<span class="ok">♪</span> drone in C, reed buzzing, laptop lid doubling as a bellows.`; },
   coffee(){ return `<span class="dim">brewing... </span><span class="ok">done.</span> ☕ back to the pipelines.`; },
   clear(){ log.innerHTML=''; return null; },
 };
-const aliases = { ls:'help', '?':'help', man:'help', projects:'repos', skills:'stack', email:'contact', cls:'clear', info:'about' };
+const aliases = { ls:'help', '?':'help', man:'help', skills:'stack', email:'contact', cls:'clear', info:'about' };
 
 function run(raw){
   const trimmed = raw.trim();
@@ -282,7 +272,7 @@ inp.addEventListener('keydown', e=>{
 document.addEventListener('click', e=>{ if(!e.target.closest('a,button')) inp.focus(); });
 
 // chips
-const chips = ['about','stack','work','repos','contact','clear'];
+const chips = ['about','stack','work','contact','clear'];
 const chipBox = document.getElementById('chips');
 chips.forEach(c=>{
   const b = document.createElement('button');
